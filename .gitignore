@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+<<<<<<< HEAD
 
 # Environment
 .env
@@ -27,3 +28,27 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+=======
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+
+# Uploads & Temp files
+backend/temp_uploads/
+backend/preprocessed_images/
+preprocessed_images/
+
+# Node
+frontend/node_modules/
+frontend/.npm/
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+>>>>>>> f235bf5 (feat: organized clean architecture with separated frontend and backend)

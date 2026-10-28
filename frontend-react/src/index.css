@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-sage: #4e8865;
+  --primary-sage-hover: #3e7052;
+  --bg-page: #f7faf8;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #f7faf8;
+  background-image: 
+    radial-gradient(circle at 10% 15%, rgba(167, 243, 208, 0.28) 0%, transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(254, 230, 138, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(226, 237, 228, 0.35) 0%, transparent 60%);
+  background-attachment: fixed;
+  color: #243329;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.04);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism Card Style */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid #e2ede4;
+  box-shadow: 0 10px 30px rgba(40, 70, 50, 0.05);
+}
+
+/* Scanning laser beam */
+.scan-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #10b981 50%, transparent 100%);
+  box-shadow: 0 0 14px #10b981, 0 0 4px #a7f3d0;
+  animation: scan 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes scan {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 92%;
+    opacity: 0.8;
+  }
+}

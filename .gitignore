@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Temporary generated files & debug outputs
+preprocessed_images/
+FRONTEND/preprocessed_images/
+FRONTEND/temp_uploads/
+leafvein_rework/output/
+leafvein_rework/preprocessed_images/
+leafvein_rework/data/reference/_debug_overlays/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo

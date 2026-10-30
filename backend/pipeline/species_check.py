@@ -69,7 +69,13 @@ def verify_hibiscus_species(
     if verify_leaf_species_dl is not None and frontlit_bgr is not None:
         try:
             dl_res = verify_leaf_species_dl(frontlit_bgr, image_path=image_path)
-            if not dl_res.get("is_hibiscus", True):
+            if dl_res.get("is_hibiscus", True) and dl_res.get("confidence", 0) >= 0.75:
+                return {
+                    'is_hibiscus': True,
+                    'reason': dl_res.get('reason', 'Verified Hibiscus rosa-sinensis (Confirmed by Deep Learning).'),
+                    'dl_confidence': dl_res.get('confidence', 0.99)
+                }
+            elif not dl_res.get("is_hibiscus", True):
                 return {
                     'is_hibiscus': False,
                     'reason': dl_res.get('reason', 'Deep Learning verified this leaf is NOT Hibiscus rosa-sinensis.'),
@@ -78,7 +84,7 @@ def verify_hibiscus_species(
         except Exception as e:
             print(f"[!] Warning during DL species verification: {e}")
 
-    # 2. Geometric & Morphological Contour Safeguards
+    # 2. Geometric & Morphological Contour Safeguards (Fallback if DL inconclusive)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return {'is_hibiscus': False, 'reason': 'No leaf contour found.'}
@@ -106,14 +112,14 @@ def verify_hibiscus_species(
     # Extent (Area / Bounding Box Area)
     extent = float(area) / (w * h) if (w * h) > 0 else 0
 
-    # Hibiscus rosa-sinensis typical bounds (broadly ovate)
-    if not (1.05 <= aspect_ratio <= 2.4):
+    # Hibiscus rosa-sinensis typical bounds (allowing petiole stem and natural variation)
+    if not (0.9 <= aspect_ratio <= 4.5):
         return {
             'is_hibiscus': False, 
             'reason': f'Not a Hibiscus plant/leaf. Image rejected. Aspect ratio ({aspect_ratio:.2f}) out of range for Hibiscus rosa-sinensis.'
         }
         
-    if solidity < 0.70:
+    if solidity < 0.55:
         return {
             'is_hibiscus': False, 
             'reason': f'Not a Hibiscus plant/leaf. Image rejected. Leaf solidity ({solidity:.2f}) too low (indicates deep lobes or non-Hibiscus shape).'

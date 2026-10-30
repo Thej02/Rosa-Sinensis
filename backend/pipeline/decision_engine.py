@@ -27,7 +27,10 @@ from config.thresholds import (
 try:
     from .deficiency_typing import identify_deficiency
 except (ImportError, ValueError):
-    from pipeline.deficiency_typing import identify_deficiency
+    try:
+        from pipeline.deficiency_typing import identify_deficiency
+    except (ImportError, ValueError):
+        from deficiency_typing import identify_deficiency
 
 
 # Verdict constants

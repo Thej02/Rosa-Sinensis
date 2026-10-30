@@ -355,6 +355,66 @@ def compute_interveinal_contrast(image: np.ndarray,
     return (contrast, contrast_mask) if return_mask else contrast
 
 
+def compute_vein_color_distributions(image: np.ndarray,
+                                     mask: np.ndarray,
+                                     skeleton: np.ndarray,
+                                     glare_mask: np.ndarray = None,
+                                     dilation_radius: int = 10) -> dict:
+    """
+    Evaluates color signatures specifically on-vein vs off-vein (interveinal lamina)
+    to differentiate between Iron (Fe) deficiency and Nitrogen (N) deficiency.
+
+    Botanical Principle:
+    - Iron (Fe) Deficiency (Interveinal Chlorosis):
+        Veins maintain high chlorophyll concentration (dark green, on_vein_green_pct >= 70%),
+        while interveinal lamina yellows (off_vein_yellow_pct elevated).
+        vein_preservation_diff = off_vein_yellow_pct - on_vein_yellow_pct >= 8%.
+    - Nitrogen (N) Deficiency (Diffuse Systemic Chlorosis):
+        Chlorophyll degrades uniformly across BOTH veins and lamina.
+        on_vein_yellow_pct tracks off_vein_yellow_pct, and on_vein_green_pct drops (< 70%).
+    """
+    if cv2.countNonZero(skeleton) == 0 or cv2.countNonZero(mask) == 0:
+        return {
+            'on_vein_green_pct': 0.0,
+            'on_vein_yellow_pct': 0.0,
+            'off_vein_yellow_pct': 0.0,
+            'vein_preservation_diff': 0.0
+        }
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation_radius * 2 + 1, dilation_radius * 2 + 1))
+    vein_region = cv2.dilate(skeleton, kernel, iterations=1)
+
+    effective_mask = cv2.bitwise_and(mask, cv2.bitwise_not(glare_mask)) if glare_mask is not None else mask
+    on_vein_mask = cv2.bitwise_and(vein_region, effective_mask)
+    off_vein_mask = cv2.bitwise_and(effective_mask, cv2.bitwise_not(vein_region))
+
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    h_chan = hsv[:, :, 0]
+    s_chan = hsv[:, :, 1]
+    v_chan = hsv[:, :, 2]
+
+    # Green pixels: Hue 46 to 90, Saturation >= 25
+    green_pixels = (h_chan >= 46) & (h_chan <= 90) & (s_chan >= 25)
+    # Yellow/pale chlorotic pixels: Hue 15 to 45, Saturation >= 20, Value >= 50
+    yellow_pixels = (h_chan >= 15) & (h_chan <= 45) & (s_chan >= 20) & (v_chan >= 50)
+
+    on_vein_total = np.count_nonzero(on_vein_mask > 0)
+    off_vein_total = np.count_nonzero(off_vein_mask > 0)
+
+    on_vein_green_pct = float((np.count_nonzero(green_pixels & (on_vein_mask > 0)) / max(on_vein_total, 1)) * 100.0)
+    on_vein_yellow_pct = float((np.count_nonzero(yellow_pixels & (on_vein_mask > 0)) / max(on_vein_total, 1)) * 100.0)
+    off_vein_yellow_pct = float((np.count_nonzero(yellow_pixels & (off_vein_mask > 0)) / max(off_vein_total, 1)) * 100.0)
+
+    vein_preservation_diff = float(off_vein_yellow_pct - on_vein_yellow_pct)
+
+    return {
+        'on_vein_green_pct': on_vein_green_pct,
+        'on_vein_yellow_pct': on_vein_yellow_pct,
+        'off_vein_yellow_pct': off_vein_yellow_pct,
+        'vein_preservation_diff': vein_preservation_diff
+    }
+
+
 def compute_color_spatial_variance(image: np.ndarray, mask: np.ndarray,
                                    glare_mask: np.ndarray = None,
                                    return_mask: bool = False):
@@ -460,6 +520,9 @@ def extract_all_features(frontlit_image: np.ndarray,
     spatial_variance, variance_mask = compute_color_spatial_variance(
         frontlit_image, mask, glare_mask=glare_mask, return_mask=True
     )
+    vein_color_dist = compute_vein_color_distributions(
+        frontlit_image, mask, vein_result['skeleton'], glare_mask=glare_mask
+    )
 
     return {
         # Vein features
@@ -477,6 +540,12 @@ def extract_all_features(frontlit_image: np.ndarray,
         'dgci': dgci,
         'interveinal_contrast': interveinal,
         'color_spatial_variance': spatial_variance,
+
+        # Specific Vein vs Lamina Differential Features for Fe vs N Typing
+        'on_vein_green_pct': vein_color_dist['on_vein_green_pct'],
+        'on_vein_yellow_pct': vein_color_dist['on_vein_yellow_pct'],
+        'off_vein_yellow_pct': vein_color_dist['off_vein_yellow_pct'],
+        'vein_preservation_diff': vein_color_dist['vein_preservation_diff'],
 
         # Underlying pixel masks for primary factors (used in Stage 10 circling)
         'masks': {

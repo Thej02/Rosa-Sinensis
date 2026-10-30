@@ -257,7 +257,7 @@ def map_simplified_verdict(
         return {
             "status": "unhealthy",
             "severity": "mild",
-            "title": "Slight Nutrient Deficiency",
+            "title": f"{etiology} (Mild)" if etiology and "Deficiency" in etiology else "Slight Nutrient Deficiency",
             "summary": f"Minor early signs detected ({etiology}). Easy to correct if addressed soon.",
             "health_score": round(max(65.0, 82.0 - yellow_ratio_pct), 1),
             "affected_area_pct": round(yellow_ratio_pct, 1),
@@ -268,7 +268,7 @@ def map_simplified_verdict(
         return {
             "status": "unhealthy",
             "severity": "moderate",
-            "title": "Moderate Nutrient Deficiency",
+            "title": f"{etiology} (Moderate)" if etiology and "Deficiency" in etiology else "Moderate Nutrient Deficiency",
             "summary": f"Noticeable deficiency ({etiology}) across significant areas of the leaf.",
             "health_score": round(max(40.0, 62.0 - (yellow_ratio_pct * 0.7)), 1),
             "affected_area_pct": round(yellow_ratio_pct, 1),
@@ -279,7 +279,7 @@ def map_simplified_verdict(
         return {
             "status": "unhealthy",
             "severity": "severe",
-            "title": "Severe Nutrient Deficiency",
+            "title": f"{etiology} (Severe)" if etiology and "Deficiency" in etiology else "Severe Nutrient Deficiency",
             "summary": f"Critical deficiency ({etiology}). Leaf tissue shows extensive chlorosis.",
             "health_score": round(max(15.0, 35.0 - (yellow_ratio_pct * 0.3)), 1),
             "affected_area_pct": round(yellow_ratio_pct, 1),

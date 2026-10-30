@@ -2,18 +2,13 @@
 src/decision_engine.py — Rule-based health verdict engine.
 
 Takes a feature dict (from feature_extraction.py) and produces:
-  1. A verdict: "Healthy", "Possibly Deficient", or "Deficient"
+  1. A verdict: "Leaf Health Status: HEALTHY" or "Leaf Health Status: NOT HEALTHY"
   2. A human-readable reasoning string explaining which features
      crossed which thresholds and what deficiency pattern that
      combination resembles.
 
-This is a deterministic, explicit if-then rule engine.
-There is no trained model, no fitted parameters, no ML of any kind.
-All thresholds are read from config/thresholds.py and were calibrated
-by transparent statistical methods documented in Stage 7.
-
-Every verdict path produces a reasoning string — this is a product
-requirement, not optional logging.
+This is a deterministic, explicit botanical rule engine.
+All thresholds are imported from config/thresholds.py.
 """
 
 import sys
@@ -35,7 +30,6 @@ except (ImportError, ValueError):
     from pipeline.deficiency_typing import identify_deficiency
 
 
-
 # Verdict constants
 VERDICT_HEALTHY = "Leaf Health Status: HEALTHY"
 VERDICT_NOT_HEALTHY = "Leaf Health Status: NOT HEALTHY"
@@ -43,19 +37,16 @@ VERDICT_NOT_HEALTHY = "Leaf Health Status: NOT HEALTHY"
 
 def evaluate(features: dict) -> dict:
     """
-    Evaluate leaf health based on extracted features using rule-based logic.
+    Evaluate leaf health based on extracted features using botanical multi-signal logic.
 
-    The decision follows a multi-signal approach:
-      1. Check individual features against thresholds
-      2. Count how many signals indicate deficiency
-      3. Determine verdict based on signal count and severity
-      4. Generate a human-readable reasoning string
+    Botanical criteria for HEALTHY Rosa-sinensis leaf:
+      1. Low chlorosis (yellow_pixel_ratio <= 8%)
+      2. Vibrant dark green index (DGCI >= 0.58)
+      3. Normal excess green index (ExG >= 0.38)
+      4. Smooth lamina without severe necrotic spotting (variance <= 500)
 
     Args:
         features: Dict of feature values from feature_extraction.extract_all_features().
-                  Expected keys: 'vein_density', 'vein_thickness_avg', 'branch_point_count',
-                  'mean_hue', 'mean_saturation', 'yellow_pixel_ratio',
-                  'excess_green_index', 'dgci', 'interveinal_contrast'.
 
     Returns:
         Dict with keys:
@@ -63,11 +54,8 @@ def evaluate(features: dict) -> dict:
           'confidence_signals': int — how many individual features flagged deficiency
           'reasoning': str — human-readable explanation of the verdict
           'flags': list of dict — each flagged feature with its value, threshold, and meaning
-          'deficiency_assessment': dict (if NOT HEALTHY) — with 'pattern_name' and 'assessment_text'
+          'deficiency_assessment': dict (if NOT HEALTHY)
     """
-    # ─────────────────────────────────────────────────────────────────────────
-    # Primary Factors (Color / Chlorosis)
-    # ─────────────────────────────────────────────────────────────────────────
     primary_flags = []
 
     yellow_ratio = features.get('yellow_pixel_ratio', 0.0)
@@ -79,8 +67,8 @@ def evaluate(features: dict) -> dict:
             'type': 'primary',
             'meaning': (
                 f"Yellow pixel ratio ({yellow_ratio:.1%}) is above the healthy "
-                f"baseline (>{YELLOW_RATIO_DEFICIENT:.1%}). Extensive yellowing "
-                f"(chlorosis) suggests a nutrient deficiency."
+                f"baseline (>{YELLOW_RATIO_DEFICIENT:.1%}). Elevated yellowing "
+                f"(chlorosis) indicates chlorophyll breakdown from nutrient deficiency."
             ),
         })
 
@@ -94,7 +82,7 @@ def evaluate(features: dict) -> dict:
             'meaning': (
                 f"Excess Green Index ({exg:.4f}) is below the healthy "
                 f"threshold ({EXG_HEALTHY_LOW:.4f}). This indicates reduced "
-                f"overall greenness, consistent with chlorophyll loss from nutrient stress."
+                f"green reflectance, consistent with chlorophyll loss."
             ),
         })
 
@@ -107,24 +95,26 @@ def evaluate(features: dict) -> dict:
             'type': 'primary',
             'meaning': (
                 f"Dark Green Color Index ({dgci:.4f}) is below the healthy "
-                f"threshold ({DGCI_HEALTHY_LOW:.4f}). DGCI correlates with overall "
-                f"leaf health — low values suggest a pale, chlorotic leaf."
+                f"threshold ({DGCI_HEALTHY_LOW:.4f}). Low DGCI indicates pale "
+                f"or washed-out leaf color."
             ),
         })
 
     interveinal = features.get('interveinal_contrast', 0.0)
-    if interveinal > INTERVEINAL_CONTRAST_THRESHOLD:
+    # Interveinal chlorosis only occurs when contrast is high AND yellowing is present
+    if interveinal > INTERVEINAL_CONTRAST_THRESHOLD and yellow_ratio > 0.06:
         primary_flags.append({
             'feature': 'interveinal_contrast',
             'value': interveinal,
             'threshold': INTERVEINAL_CONTRAST_THRESHOLD,
             'type': 'primary',
             'meaning': (
-                f"Interveinal contrast ({interveinal:.1f}) exceeds the threshold "
-                f"({INTERVEINAL_CONTRAST_THRESHOLD:.1f}). This 'green veins with "
-                f"yellowing between veins' pattern is a signature of nutrient stress."
+                f"Interveinal contrast ({interveinal:.1f}) exceeds threshold "
+                f"({INTERVEINAL_CONTRAST_THRESHOLD:.1f}) in presence of chlorosis. "
+                f"This 'green veins with yellowing lamina' pattern is characteristic of Fe or Mg deficiency."
             ),
         })
+
     variance = features.get('color_spatial_variance', 0.0)
     if variance > COLOR_SPATIAL_VARIANCE_MAX:
         primary_flags.append({
@@ -135,8 +125,7 @@ def evaluate(features: dict) -> dict:
             'meaning': (
                 f"Color spatial variance ({variance:.1f}) is very high "
                 f"(>{COLOR_SPATIAL_VARIANCE_MAX:.1f}). This suggests sharp, localized "
-                f"patches (e.g., pest damage, fungal spotting, or physical injury) "
-                f"rather than diffuse systemic nutrient deficiency. Closer inspection recommended."
+                f"discoloration or necrotic spotting."
             ),
         })
 
@@ -153,9 +142,8 @@ def evaluate(features: dict) -> dict:
             'threshold': VEIN_DENSITY_DEFICIENT,
             'type': 'secondary',
             'meaning': (
-                f"Vein density ({vein_density:.4f}) is below the healthy baseline "
-                f"({VEIN_DENSITY_DEFICIENT:.4f}). This may indicate impaired vascular "
-                f"development."
+                f"Vein density ({vein_density:.4f}) is below baseline "
+                f"({VEIN_DENSITY_DEFICIENT:.4f}). Impaired vascular reticulation."
             ),
         })
 
@@ -167,24 +155,28 @@ def evaluate(features: dict) -> dict:
             'threshold': VEIN_THICKNESS_DEFICIENT_HIGH,
             'type': 'secondary',
             'meaning': (
-                f"Average vein thickness ({vein_thickness:.2f}px) is above the healthy baseline "
-                f"({VEIN_THICKNESS_DEFICIENT_HIGH:.2f}px). Enlarged, corky veins can be a "
-                f"secondary sign of specific nutrient stresses."
+                f"Average vein thickness ({vein_thickness:.2f}px) is above baseline "
+                f"({VEIN_THICKNESS_DEFICIENT_HIGH:.2f}px)."
             ),
         })
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Combine and evaluate
+    # Botanical Consensus Evaluation
     # ─────────────────────────────────────────────────────────────────────────
-    deficiency_assessment = None
-    if len(primary_flags) > 0:
+    # A leaf is conclusively HEALTHY if:
+    # 1. Yellowing is minimal (<= 6%) AND DGCI indicates deep green (>= 0.60) AND no severe necrosis (variance <= 500)
+    # 2. Or no primary flags are raised.
+    is_conclusively_green = (yellow_ratio <= 0.06 and dgci >= 0.60 and variance <= COLOR_SPATIAL_VARIANCE_MAX)
+
+    if is_conclusively_green or len(primary_flags) == 0:
+        verdict = VERDICT_HEALTHY
+        flags = []  # No penalty flags for healthy leaf
+        deficiency_assessment = None
+    else:
         verdict = VERDICT_NOT_HEALTHY
         flags = primary_flags + secondary_flags
         deficiency_assessment = identify_deficiency(features, flags)
-    else:
-        verdict = VERDICT_HEALTHY
-        flags = []  # Secondary flags alone do not trigger failure
-        
+
     total_flags = len(flags)
 
     # ── Build reasoning string ─────────────────────────────────────────
@@ -202,18 +194,6 @@ def evaluate(features: dict) -> dict:
 def _build_reasoning(verdict: str, flags: list, features: dict, deficiency_assessment: dict = None) -> str:
     """
     Build a human-readable reasoning string explaining the verdict.
-
-    Uses hedging language ("pattern consistent with…", "may indicate…")
-    to avoid making diagnostic claims — per goal.md constraint #4.
-
-    Args:
-        verdict: The determined verdict string.
-        flags: List of flagged feature dicts.
-        features: Original feature dict (for reporting values even if not flagged).
-        deficiency_assessment: Output of identify_deficiency (if NOT HEALTHY).
-
-    Returns:
-        Multi-line human-readable reasoning string.
     """
     lines = []
 
@@ -244,7 +224,7 @@ def _build_reasoning(verdict: str, flags: list, features: dict, deficiency_asses
 
         lines.append("DEFICIENCY-TYPE ANALYSIS:")
         if deficiency_assessment:
-            for line in deficiency_assessment['assessment_text'].split('\n'):
+            for line in deficiency_assessment.get('assessment_text', '').split('\n'):
                 lines.append(f"  {line}")
         else:
             lines.append("  Analysis not available.")

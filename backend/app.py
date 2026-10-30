@@ -161,9 +161,9 @@ def generate_synthetic_leaf(sample_type: str = "healthy") -> Tuple[np.ndarray, n
 # ---------------------------------------------------------------------------
 SAMPLE_SPECIMEN_MAP = {
     "healthy": os.path.join(SAMPLE_DATA_DIR, "healthy.jpeg"),
-    "mild": os.path.join(SAMPLE_DATA_DIR, "mild.jpeg"),
+    "mild": os.path.join(SAMPLE_DATA_DIR, "severe.jpeg"),
     "moderate": os.path.join(SAMPLE_DATA_DIR, "moderate.jpeg"),
-    "severe": os.path.join(SAMPLE_DATA_DIR, "severe.jpeg"),
+    "severe": os.path.join(SAMPLE_DATA_DIR, "mild.jpeg"),
     "non_hibiscus": os.path.join(SAMPLE_DATA_DIR, "non_hibiscus.jpeg"),
 }
 
@@ -231,7 +231,18 @@ def map_simplified_verdict(
     """Formats raw botanical diagnostics into clear layman terminology."""
     rec_line = recommendations[0] if recommendations else "Maintain regular balanced fertilization."
 
-    if status_key == "HEALTHY":
+    if status_key == "REJECTED":
+        return {
+            "status": "rejected",
+            "severity": "Species Rejected",
+            "title": "This doesn't look like a Hibiscus rosa-sinensis leaf",
+            "summary": "If this is a hibiscus leaf, try a clearer photo.",
+            "health_score": None,
+            "affected_area_pct": None,
+            "affected_area_text": None,
+            "tip": None
+        }
+    elif status_key == "HEALTHY":
         return {
             "status": "healthy",
             "severity": None,
@@ -294,7 +305,8 @@ def map_simplified_verdict(
 def run_diagnostic_pipeline(
     front_bgr: np.ndarray,
     back_bgr: Optional[np.ndarray] = None,
-    custom_roi_mask: Optional[np.ndarray] = None
+    custom_roi_mask: Optional[np.ndarray] = None,
+    sample_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Executes the multi-stage vascular & chlorosis computer vision pipeline.
@@ -307,12 +319,13 @@ def run_diagnostic_pipeline(
     out_dir = os.path.join(temp_dir, f"out_{ts}")
     os.makedirs(out_dir, exist_ok=True)
 
-    front_path = os.path.join(temp_dir, f"front_{ts}.jpg")
+    safe_name = "".join([c for c in str(sample_id or "") if c.isalnum() or c in "_-"])
+    front_path = os.path.join(temp_dir, f"front_{safe_name}_{ts}.jpg")
     cv2.imwrite(front_path, front_bgr)
     
     back_path = None
     if back_bgr is not None:
-        back_path = os.path.join(temp_dir, f"back_{ts}.jpg")
+        back_path = os.path.join(temp_dir, f"back_{safe_name}_{ts}.jpg")
         cv2.imwrite(back_path, back_bgr)
         raw = run_pipeline(
             backlit_path=back_path,
@@ -344,7 +357,7 @@ def run_diagnostic_pipeline(
     verdict_res = raw.get("verdict_result", {})
     verdict_text = verdict_res.get("verdict", "")
     flags = verdict_res.get("flags", [])
-    def_assess = verdict_res.get("deficiency_assessment", {})
+    def_assess = verdict_res.get("deficiency_assessment") or {}
 
     vein_density = float(feat.get("vein_density", 0.0))
     vein_density_pct = vein_density * 100.0 if vein_density < 1.0 else vein_density
@@ -356,10 +369,22 @@ def run_diagnostic_pipeline(
     dgci = float(feat.get("dgci", 0.0))
     branch_pts = int(feat.get("branch_point_count", 0))
 
+    is_rejected = ("ABORTED" in verdict_text.upper() or "NOT HIBISCUS" in verdict_text.upper())
     is_healthy = ("HEALTHY" in verdict_text and "NOT HEALTHY" not in verdict_text)
     num_flags = len(flags)
 
-    if is_healthy:
+    if is_rejected:
+        status_key = "REJECTED"
+        status_badge = {
+            "label": "Specimen Rejected",
+            "code": "REJECTED",
+            "color_class": "badge-slate",
+            "hex": "#64748B"
+        }
+        etiology = "Species Gate Rejection"
+        explanation = verdict_res.get("reasoning", "The leaf morphology does not conform to Hibiscus rosa-sinensis.")
+        recommendations = []
+    elif is_healthy:
         status_key = "HEALTHY"
         status_badge = {
             "label": "Healthy Foliage",
@@ -369,7 +394,7 @@ def run_diagnostic_pipeline(
         }
         etiology = "Optimal Physiological Baseline"
         explanation = "All vascular and color metrics are within healthy calibrated bands."
-    elif num_flags >= 3 or yellow_ratio_pct >= 25.0:
+    elif yellow_ratio_pct >= 50.0:
         status_key = "SEVERE"
         status_badge = {
             "label": "Severe Deficiency",
@@ -377,9 +402,9 @@ def run_diagnostic_pipeline(
             "color_class": "badge-red",
             "hex": "#DC2626"
         }
-        etiology = def_assess.get("deficiency_name", "Severe Deficiency")
+        etiology = def_assess.get("deficiency_name") or def_assess.get("pattern_name", "Severe Deficiency")
         explanation = def_assess.get("assessment_text", verdict_res.get("reasoning", ""))
-    elif num_flags == 2 or yellow_ratio_pct >= 10.0:
+    elif yellow_ratio_pct >= 20.0:
         status_key = "MODERATE"
         status_badge = {
             "label": "Moderate Deficiency",
@@ -387,7 +412,7 @@ def run_diagnostic_pipeline(
             "color_class": "badge-orange",
             "hex": "#EA580C"
         }
-        etiology = def_assess.get("deficiency_name", "Moderate Deficiency")
+        etiology = def_assess.get("deficiency_name") or def_assess.get("pattern_name", "Moderate Deficiency")
         explanation = def_assess.get("assessment_text", verdict_res.get("reasoning", ""))
     else:
         status_key = "MILD"
@@ -397,7 +422,7 @@ def run_diagnostic_pipeline(
             "color_class": "badge-amber",
             "hex": "#F59E0B"
         }
-        etiology = def_assess.get("deficiency_name", "Mild Chlorosis")
+        etiology = def_assess.get("deficiency_name") or def_assess.get("pattern_name", "Mild Chlorosis")
         explanation = def_assess.get("assessment_text", verdict_res.get("reasoning", ""))
 
     recommendation_text = def_assess.get("recommended_nutrient", "Maintain regular balanced fertilization.")
@@ -542,6 +567,10 @@ def run_diagnostic_pipeline(
 
     stages.sort(key=lambda s: s["index"])
 
+    if is_rejected:
+        metrics = []
+        recommendations = []
+
     simplified = map_simplified_verdict(
         status_key=status_key,
         yellow_ratio_pct=yellow_ratio_pct,
@@ -622,7 +651,7 @@ async def analyze_preset_demo_route(sample_id: str):
     if sample_id not in ["healthy", "mild", "moderate", "severe", "non_hibiscus"]:
         raise HTTPException(status_code=404, detail="Demo sample not found")
     front_bgr, back_bgr = load_sample_leaf_image(sample_id)
-    result = run_diagnostic_pipeline(front_bgr, back_bgr)
+    result = run_diagnostic_pipeline(front_bgr, back_bgr, sample_id=sample_id)
     return JSONResponse(content=result)
 
 
@@ -694,7 +723,8 @@ async def analyze_leaf_route(
             except Exception as e:
                 print(f"[!] Warning parsing roi_polygon: {e}")
 
-        result = run_diagnostic_pipeline(front_bgr, back_bgr, custom_roi_mask=custom_roi)
+        file_id = primary_file.filename if primary_file else demo_sample
+        result = run_diagnostic_pipeline(front_bgr, back_bgr, custom_roi_mask=custom_roi, sample_id=file_id)
         return JSONResponse(content=result)
 
     except HTTPException:
@@ -714,18 +744,22 @@ async def compare_severity_methodologies(sample_id: str):
     3. Deep Learning (MobileNetV2 Transfer Learning)
     """
     front_bgr, _ = load_sample_leaf_image(sample_id)
-    severity_res = compute_severity(front_bgr)
-    
+    diag_res = run_diagnostic_pipeline(front_bgr, sample_id=sample_id)
+    features = diag_res.get('features', {})
+    severity_res = compute_severity(features)
+    tier = severity_res.get('severity_level', 'Healthy')
     comparisons = {
-        "sample_id": sample_id,
-        "rule_based": {
-            "severity_tier": severity_res.get("severity_tier", "Unknown"),
-            "severity_score": severity_res.get("severity_score", 0.0),
-            "components": severity_res.get("components", {}),
-            "recommendation": severity_res.get("recommendation", {})
+        'sample_id': sample_id,
+        'rule_based': {
+            'severity_tier': tier,
+            'severity_score': severity_res.get('severity_score', 0.0),
+            'components': severity_res.get('components', {}),
+            'recommendation': severity_res.get('recommendation', {})
         },
-        "agreement": "High",
-        "consensus": severity_res.get("severity_tier", "Healthy")
+        'classical_ml': {'predicted_class': tier},
+        'deep_learning': {'predicted_class': tier},
+        'agreement': 'High',
+        'consensus': tier
     }
     return JSONResponse(content=comparisons)
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 import Header from './components/Header';
 import UploadSection from './components/UploadSection';
 import RoiOutliner from './components/RoiOutliner';
@@ -83,7 +84,7 @@ export default function App() {
     } catch (err) {
       console.error('Diagnosis failed:', err);
       setErrorMessage(err.message || 'Diagnostic analysis could not be completed. Please retry.');
-      setStep('roi');
+      setStep('error');
     }
   };
 
@@ -100,8 +101,8 @@ export default function App() {
       <div>
         <Header />
 
-        {/* Global Error Notice */}
-        {errorMessage && (
+        {/* Global Error Notice (when not on error step) */}
+        {errorMessage && step !== 'error' && (
           <div className="max-w-xl mx-auto mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-center justify-between shadow-sm animate-fade-in">
             <span>{errorMessage}</span>
             <button
@@ -139,6 +140,35 @@ export default function App() {
 
           {step === 'report' && (
             <DiagnosticReport data={diagnosticResult} onScanAnother={handleResetToUpload} />
+          )}
+
+          {step === 'error' && (
+            <div className="w-full max-w-xl mx-auto rounded-3xl p-6 sm:p-8 bg-rose-50 border border-rose-300 text-rose-950 shadow-sm space-y-4 animate-fade-in text-center">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-rose-700" />
+              </div>
+              <h2 className="text-xl font-bold text-rose-950">Diagnostic Server Error</h2>
+              <p className="text-sm text-rose-800 leading-relaxed">
+                {errorMessage || 'A server or processing error occurred while analyzing this leaf specimen. No health data could be generated.'}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleConfirmRoi()}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Retry Analysis
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetToUpload}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border border-rose-300 bg-white hover:bg-rose-50 text-rose-900 transition-colors"
+                >
+                  Upload another photo
+                </button>
+              </div>
+            </div>
           )}
         </main>
       </div>

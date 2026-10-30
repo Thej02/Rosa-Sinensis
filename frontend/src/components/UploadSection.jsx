@@ -1,14 +1,22 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, Camera, Image as ImageIcon, X, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import {
+  UploadCloud,
+  Camera,
+  Image as ImageIcon,
+  X,
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+} from 'lucide-react';
 import CameraModal from './CameraModal';
 import { getDemoImageUrl } from '../api';
 
 const PRESET_SAMPLES = [
-  { id: 'healthy', label: 'Healthy Leaf', tag: 'Optimal', color: 'emerald' },
-  { id: 'mild', label: 'Mild Stress', tag: 'Early Stage', color: 'amber' },
-  { id: 'moderate', label: 'Moderate Stress', tag: 'Vascular Shift', color: 'orange' },
-  { id: 'severe', label: 'Severe Deficiency', tag: 'Degraded', color: 'rose' },
-  { id: 'non_hibiscus', label: 'Non-Hibiscus', tag: 'Species Reject', color: 'slate' },
+  { id: 'healthy', label: 'Healthy Leaf', tag: 'Optimal', color: 'emerald', desc: 'Dense veins, deep green' },
+  { id: 'mild', label: 'Mild Stress', tag: 'Early Stage', color: 'amber', desc: 'Mild localized stress' },
+  { id: 'moderate', label: 'Moderate Stress', tag: 'Vascular Shift', color: 'orange', desc: 'Interveinal yellowing' },
+  { id: 'severe', label: 'Severe Stress', tag: 'Degraded', color: 'rose', desc: 'Foliar bleaching' },
+  { id: 'non_hibiscus', label: 'Non-Hibiscus', tag: 'Species Reject', color: 'slate', desc: 'Foreign morphology' },
 ];
 
 export default function UploadSection({
@@ -131,17 +139,17 @@ export default function UploadSection({
                 </span>
                 {selectedSampleId && (
                   <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                    Preset: {selectedSampleId}
+                    Specimen: {selectedSampleId}
                   </span>
                 )}
               </div>
 
               <h4 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                {selectedFile ? selectedFile.name : `Calibration Specimen (${selectedSampleId})`}
+                {selectedFile ? selectedFile.name : `Dataset Specimen (${selectedSampleId})`}
               </h4>
 
               <p className="text-xs text-gray-500">
-                Ready for leaf boundary outlining and automated 12-stage vascular analysis.
+                Ready for leaf boundary outlining and automated vascular analysis.
               </p>
 
               <div className="pt-2">
@@ -159,12 +167,12 @@ export default function UploadSection({
         </div>
       )}
 
-      {/* Preset Calibration Samples Bar */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
+      {/* Benchmark Calibration Presets */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between gap-2 px-1">
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            Or test with calibrated benchmark specimens:
+            Test with benchmark specimens:
           </span>
         </div>
 
@@ -176,13 +184,21 @@ export default function UploadSection({
                 key={preset.id}
                 type="button"
                 onClick={() => handlePresetClick(preset.id)}
-                className={`flex flex-col items-center justify-center p-3 rounded-2xl text-center transition-all border ${
+                className={`group flex flex-col p-2.5 rounded-2xl border transition-all text-center ${
                   isSelected
                     ? 'bg-emerald-100/60 border-emerald-500 shadow-sm scale-[1.02]'
                     : 'bg-white hover:bg-emerald-50/40 border-gray-200 text-gray-700'
                 }`}
               >
-                <span className="text-xs font-bold text-gray-900 mb-0.5">{preset.label}</span>
+                <div className="w-full aspect-square rounded-xl overflow-hidden bg-emerald-950/20 mb-2 border border-gray-100">
+                  <img
+                    src={getDemoImageUrl(preset.id)}
+                    alt={preset.label}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="text-xs font-bold text-gray-900 mb-0.5 truncate">{preset.label}</span>
                 <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                   {preset.tag}
                 </span>

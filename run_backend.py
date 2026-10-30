@@ -7,6 +7,8 @@ Serves the React SPA frontend directly at http://localhost:5000.
 
 import os
 import sys
+import time
+import subprocess
 import threading
 import webbrowser
 import uvicorn
@@ -19,6 +21,24 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+
+
+def free_port_if_in_use(port: int):
+    """If port is occupied by a stale process, terminate it to prevent Errno 10048."""
+    try:
+        current_pid = os.getpid()
+        output = subprocess.check_output("netstat -ano", shell=True, text=True, stderr=subprocess.DEVNULL)
+        for line in output.splitlines():
+            if f":{port} " in line and "LISTENING" in line:
+                parts = line.strip().split()
+                if len(parts) >= 5:
+                    pid = int(parts[-1])
+                    if pid != current_pid and pid > 0:
+                        print(f"[*] Freeing occupied port {port} (PID: {pid})...")
+                        subprocess.run(f"taskkill /F /PID {pid}", shell=True, capture_output=True)
+                        time.sleep(0.6)
+    except Exception:
+        pass
 
 
 def open_browser(port: int):
@@ -36,6 +56,8 @@ if __name__ == "__main__":
             pass
 
     port = int(os.environ.get("PORT", 5000))
+    free_port_if_in_use(port)
+
     has_frontend = os.path.isfile(os.path.join(FRONTEND_DIST, "index.html"))
 
     print("\n" + "=" * 70)

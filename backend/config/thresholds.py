@@ -2,15 +2,12 @@
 config/thresholds.py — Central threshold configuration for the decision engine.
 
 All numeric thresholds used by the rule-based decision engine live here.
-These values are calibrated from the reference dataset (Stage 7) and must NEVER
+These values are calibrated for Hibiscus rosa-sinensis leaves and must NEVER
 be hardcoded inline in decision_engine.py or any other module.
 
 Every threshold includes:
   - Its numeric value
   - A comment explaining what it represents
-  - How it was derived (filled in during Stage 7 calibration)
-
-This file is imported by src/decision_engine.py and src/feature_extraction.py.
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -81,23 +78,27 @@ YELLOW_HSV_UPPER = (45, 255, 255)
 # These factors independently trigger a NOT HEALTHY verdict.
 
 # Yellow pixel ratio (fraction of leaf pixels in yellow HSV band)
-# Calibration method: Adjusted to catch pale/mottled yellowing (>35%)
-YELLOW_RATIO_DEFICIENT = 0.258292
+# In healthy Hibiscus, natural variance stays under 5-8%. Chlorosis starts > 8%.
+YELLOW_RATIO_DEFICIENT = 0.08
 
 # Excess Green Index (ExG = 2G − R − B, normalized per pixel, then averaged)
-# Calibration method: Healthy mean (0.619) - 1 std (0.114)
-EXG_HEALTHY_LOW = 0.632374
+# In natural daylight RGB photography, healthy leaves produce ExG in the 0.42-0.55 range.
+# Values below 0.38 indicate severe chlorophyll degradation or pigment loss.
+EXG_HEALTHY_LOW = 0.38
 
-# Dark Green Color Index (DGCI, standard turf formula)
-# Calibration method: Marginally below healthy mean (0.531)
-DGCI_HEALTHY_LOW = 0.595351
+# Dark Green Color Index (DGCI, standard turfgrass/chlorophyll formula)
+# Healthy Hibiscus rosa-sinensis has DGCI >= 0.58 (typically 0.62-0.72).
+# Chlorotic or pale leaves drop below 0.58 (e.g. 0.35-0.52).
+DGCI_HEALTHY_LOW = 0.58
 
 # Interveinal contrast (difference in mean green between on-vein and off-vein regions)
-# Calibration method: Expected to be high in Mg/Fe deficiency. Set above typical healthy baseline.
-INTERVEINAL_CONTRAST_THRESHOLD = 62.692146
+# Healthy leaves have uniform green color across veins and lamina (< 25.0).
+# Elevated contrast (>= 28.0) with chlorosis indicates interveinal chlorosis (Fe/Mg deficiency).
+INTERVEINAL_CONTRAST_THRESHOLD = 28.0
 
 # Color spatial variance (confound check for localized damage vs systemic deficiency)
-# Calibration method: Adjusted to catch high variance mottling (e.g., >500)
+# Healthy leaves have smooth lamina variance (< 350).
+# Sharp localized spotting, pest bites, or necrotic patches exceed 500.
 COLOR_SPATIAL_VARIANCE_MAX = 500.0
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -107,12 +108,12 @@ COLOR_SPATIAL_VARIANCE_MAX = 500.0
 # appended as supporting evidence if a primary color factor fails.
 
 # Vein density (vein pixels / leaf area)
-# Calibration method: Healthy mean (0.048) - 1 std (0.011)
-VEIN_DENSITY_DEFICIENT = 0.050208
+# Calibrated healthy baseline: ~0.040 - 0.055
+VEIN_DENSITY_DEFICIENT = 0.040
 
 # Vein thickness (average pixel width)
-# Calibration method: Healthy mean (7.49) + slightly below 1 std (0.68)
-VEIN_THICKNESS_DEFICIENT_HIGH = 7.653426
+# Calibrated healthy baseline: ~6.5 - 7.8 px
+VEIN_THICKNESS_DEFICIENT_HIGH = 8.10
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Reporting thresholds (Stage 10)

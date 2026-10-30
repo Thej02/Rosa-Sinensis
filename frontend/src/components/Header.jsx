@@ -48,12 +48,6 @@ export default function Header() {
           <Leaf className="w-3.5 h-3.5 text-emerald-600" />
           Hibiscus rosa-sinensis
         </span>
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-          Shoeblackplant
-        </span>
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-          12-Stage Vascular Extraction
-        </span>
 
         {/* Live Backend Connection Indicator */}
         <span
@@ -84,10 +78,10 @@ export default function Header() {
 
       {/* Main Title & Subtitle */}
       <h1 className="text-3xl sm:text-4xl font-extrabold text-[#243329] tracking-tight mb-2">
-        Rosa-sinensis Leaf Health Diagnostic
+        Hibiscus rosa-sinensis Leaf Health Diagnostic
       </h1>
       <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed">
-        Computer vision vascular architecture extraction & spectrophotometric health diagnosis
+        Computer vision vascular architecture extraction & color-based health analysis
         for Hibiscus leaves.
       </p>
     </header>

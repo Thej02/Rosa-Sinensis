@@ -175,7 +175,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-16 pt-6 border-t border-gray-200/60 text-center text-xs text-gray-400 space-y-1">
-        <p>Rosa-sinensis Computer Vision Vascular Architecture Diagnostic System</p>
+        <p>Hibiscus (<span className="italic">rosa-sinensis</span>) Computer Vision Vascular Architecture Diagnostic System</p>
         <p className="text-[11px] text-gray-400/80">Built with React, Vite, Tailwind CSS & OpenCV Pipeline</p>
       </footer>
     </div>

@@ -46,7 +46,7 @@ export default function Header() {
       <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100/70 text-emerald-800 border border-emerald-200">
           <Leaf className="w-3.5 h-3.5 text-emerald-600" />
-          Hibiscus rosa-sinensis
+          <span>Hibiscus (<span className="italic font-normal">rosa-sinensis</span>)</span>
         </span>
 
         {/* Live Backend Connection Indicator */}
@@ -78,11 +78,11 @@ export default function Header() {
 
       {/* Main Title & Subtitle */}
       <h1 className="text-3xl sm:text-4xl font-extrabold text-[#243329] tracking-tight mb-2">
-        Hibiscus rosa-sinensis Leaf Health Diagnostic
+        Hibiscus (<span className="italic font-extrabold">rosa-sinensis</span>) Leaf Health Diagnostic
       </h1>
       <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto leading-relaxed">
         Computer vision vascular architecture extraction & color-based health analysis
-        for Hibiscus leaves.
+        for Hibiscus (<span className="italic font-medium">rosa-sinensis</span>) leaves.
       </p>
     </header>
   );

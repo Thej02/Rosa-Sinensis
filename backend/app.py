@@ -182,7 +182,7 @@ def get_demo_samples():
     return [
         {
             "id": "healthy",
-            "name": "Healthy Rosa-sinensis",
+            "name": "Healthy Hibiscus (rosa-sinensis)",
             "badge": "Healthy",
             "color": "#10B981",
             "description": "Pristine dark green lamina, intact vascular reticulation, zero chlorosis."
@@ -235,7 +235,7 @@ def map_simplified_verdict(
         return {
             "status": "rejected",
             "severity": "Species Rejected",
-            "title": "This doesn't look like a Hibiscus rosa-sinensis leaf",
+            "title": "This doesn't look like a Hibiscus (rosa-sinensis) leaf",
             "summary": "If this is a hibiscus leaf, try a clearer photo.",
             "health_score": None,
             "affected_area_pct": None,
@@ -382,7 +382,7 @@ def run_diagnostic_pipeline(
             "hex": "#64748B"
         }
         etiology = "Species Gate Rejection"
-        explanation = verdict_res.get("reasoning", "The leaf morphology does not conform to Hibiscus rosa-sinensis.")
+        explanation = verdict_res.get("reasoning", "The leaf morphology does not conform to Hibiscus (rosa-sinensis).")
         recommendations = []
     elif is_healthy:
         status_key = "HEALTHY"
@@ -601,7 +601,7 @@ def run_diagnostic_pipeline(
         "additional_readouts": {
             "lamina_area_pixels": feat.get("leaf_area_pixels", 0),
             "confidence_score_pct": 97.4 if is_healthy else 93.2,
-            "engine": "Rosa-sinensis Computer Vision Pipeline",
+            "engine": "Hibiscus (rosa-sinensis) Computer Vision Pipeline",
             "fe_vs_n_differential": def_assess.get("deficiency_name", "Baseline")
         },
         "gallery": gallery,
@@ -619,7 +619,7 @@ async def api_status():
     return {
         "status": "online",
         "framework": "FastAPI",
-        "backend_engine": "Rosa-sinensis 12-Stage Vascular Pipeline",
+        "backend_engine": "Hibiscus (rosa-sinensis) 12-Stage Vascular Pipeline",
         "models_loaded": {
             "random_forest": rf_predict_leaf is not None,
             "deep_learning_mobilenet": predict_leaf_dl is not None
@@ -804,7 +804,7 @@ else:
     @app.get("/")
     async def root():
         return {
-            "message": "Rosa-sinensis Leaf Health Diagnostic API is running.",
+            "message": "Hibiscus (rosa-sinensis) Leaf Health Diagnostic API is running.",
             "frontend": "Run 'cd frontend && npm run dev' to launch the React frontend UI.",
             "docs": "/docs"
         }

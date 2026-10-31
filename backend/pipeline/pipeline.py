@@ -142,7 +142,7 @@ def run_pipeline(backlit_path: str,
     # ── Step 1.5: Species Check (Hard Gate) ───────────────────────────
     species_res = verify_hibiscus_species(mask, image_path=frontlit_path)
     if not species_res['is_hibiscus']:
-        print("Species Check Failed: The leaf is NOT Hibiscus (Rosa-sinensis). Analysis aborted.")
+        print("Species Check Failed: The leaf is NOT Hibiscus (rosa-sinensis). Analysis aborted.")
         print(f"       Reason: {species_res['reason']}")
         return {
             'image_id': image_id,
@@ -151,12 +151,12 @@ def run_pipeline(backlit_path: str,
                 'reasoning': species_res['reason'], 
                 'confidence_signals': 0
             },
-            'report_text': f"Species Check Failed:\nThe leaf is NOT Hibiscus (Rosa-sinensis). Analysis aborted.\nReason: {species_res['reason']}",
+            'report_text': f"Species Check Failed:\nThe leaf is NOT Hibiscus (rosa-sinensis). Analysis aborted.\nReason: {species_res['reason']}",
             'output_files': [],
             'preprocessed_dir': prep_dir
         }
     else:
-        print("Species Check: The leaf is Hibiscus (Rosa-sinensis). Proceeding with analysis.")
+        print("Species Check: The leaf is Hibiscus (rosa-sinensis). Proceeding with analysis.")
 
     # ── Step 2: ROI Tracing (Custom Mask or Interactive) ─────────────
     if custom_roi_mask is not None:

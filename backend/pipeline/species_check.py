@@ -39,7 +39,7 @@ def verify_hibiscus_species(
         if 'non hibiscus' in norm_path or 'non_hibiscus' in norm_path or 'mango' in norm_path:
             return {
                 'is_hibiscus': False,
-                'reason': 'The leaf is NOT Hibiscus (Rosa-sinensis). Analysis aborted.'
+                'reason': 'The leaf is NOT Hibiscus (rosa-sinensis). Analysis aborted.'
             }
 
         base_name = os.path.basename(image_path).strip().lower()
@@ -53,7 +53,7 @@ def verify_hibiscus_species(
                             if 'non hibiscus' in row[1].strip().lower() or 'non_hibiscus' in row[1].strip().lower():
                                 return {
                                     'is_hibiscus': False,
-                                    'reason': 'The leaf is NOT Hibiscus (Rosa-sinensis). Analysis aborted.'
+                                    'reason': 'The leaf is NOT Hibiscus (rosa-sinensis). Analysis aborted.'
                                 }
             except Exception:
                 pass
@@ -72,13 +72,13 @@ def verify_hibiscus_species(
             if dl_res.get("is_hibiscus", True) and dl_res.get("confidence", 0) >= 0.75:
                 return {
                     'is_hibiscus': True,
-                    'reason': dl_res.get('reason', 'Verified Hibiscus rosa-sinensis (Confirmed by Deep Learning).'),
+                    'reason': dl_res.get('reason', 'Verified Hibiscus (rosa-sinensis) (Confirmed by Deep Learning).'),
                     'dl_confidence': dl_res.get('confidence', 0.99)
                 }
             elif not dl_res.get("is_hibiscus", True):
                 return {
                     'is_hibiscus': False,
-                    'reason': dl_res.get('reason', 'Deep Learning verified this leaf is NOT Hibiscus rosa-sinensis.'),
+                    'reason': dl_res.get('reason', 'Deep Learning verified this leaf is NOT Hibiscus (rosa-sinensis).'),
                     'dl_confidence': dl_res.get('confidence', 0.99)
                 }
         except Exception as e:
@@ -116,7 +116,7 @@ def verify_hibiscus_species(
     if not (0.9 <= aspect_ratio <= 4.5):
         return {
             'is_hibiscus': False, 
-            'reason': f'Not a Hibiscus plant/leaf. Image rejected. Aspect ratio ({aspect_ratio:.2f}) out of range for Hibiscus rosa-sinensis.'
+            'reason': f'Not a Hibiscus plant/leaf. Image rejected. Aspect ratio ({aspect_ratio:.2f}) out of range for Hibiscus (rosa-sinensis).'
         }
         
     if solidity < 0.55:
@@ -133,5 +133,5 @@ def verify_hibiscus_species(
         
     return {
         'is_hibiscus': True,
-        'reason': 'Verified Hibiscus rosa-sinensis (Confirmed by Deep Learning & Morphology).'
+        'reason': 'Verified Hibiscus (rosa-sinensis) (Confirmed by Deep Learning & Morphology).'
     }

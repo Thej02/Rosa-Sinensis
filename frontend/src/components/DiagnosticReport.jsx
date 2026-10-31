@@ -67,7 +67,7 @@ export default function DiagnosticReport({ data, onScanAnother }) {
   };
 
   const handleDownloadReport = () => {
-    const text = data.report_text || `HIBISCUS ROSA-SINENSIS LEAF REPORT\nVerdict: ${data.verdict || data.status}`;
+    const text = data.report_text || `HIBISCUS (rosa-sinensis) LEAF REPORT\nVerdict: ${data.verdict || data.status}`;
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -101,10 +101,10 @@ export default function DiagnosticReport({ data, onScanAnother }) {
             </div>
             <div className="space-y-1.5 flex-1">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                This doesn't look like a Hibiscus rosa-sinensis leaf
+                This doesn't look like a Hibiscus (<span className="italic font-bold">rosa-sinensis</span>) leaf
               </h2>
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                If this is a hibiscus leaf, try a clearer photo.
+                If this is a Hibiscus (<span className="italic">rosa-sinensis</span>) leaf, try a clearer photo.
               </p>
             </div>
           </div>
@@ -177,7 +177,9 @@ export default function DiagnosticReport({ data, onScanAnother }) {
               <div className="space-y-1">
                 <span className="font-semibold text-slate-900 block">Technical Reason:</span>
                 <p className="bg-white p-3.5 rounded-xl border border-slate-200 font-mono text-xs leading-relaxed text-slate-800">
-                  {data.reasoning || data.explanation || 'Specimen did not meet morphological or vascular criteria for Hibiscus rosa-sinensis.'}
+                  {data.reasoning || data.explanation || (
+                    <>Specimen did not meet morphological or vascular criteria for Hibiscus (<span className="italic">rosa-sinensis</span>).</>
+                  )}
                 </p>
               </div>
 
